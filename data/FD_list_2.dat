@@ -1,0 +1,8 @@
+A,B,E -> C
+A,B,D -> E
+A,B,D -> C
+B,C,D -> E
+B,C,D -> A
+B,C,E -> A
+B,C,E -> D
+A,B,E -> D
