@@ -4,7 +4,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-f', '--filename', help='%(prog)')
+parser.add_argument('-f', '--filename', '-a','--auto', help='%(prog)')
 args = vars(parser.parse_args())
 
 print "args[f]:", args['filename']

@@ -5,6 +5,7 @@ from collections import defaultdict
 from bitmap_util import *
 from copy import deepcopy
 
+
 ##########################################################################
 # read in set of FDs from file, generate 
 # bitmaps, generate complete set of 
@@ -158,23 +159,6 @@ class FDAnalysis:
         for c in min_covers:
             covers_bitmaps.append(union_fd_list_bitmaps(c))
 
-        for b in covers_bitmaps:
-            print bitmap_covered_by_bitmap(fd.getBitmap(),b)
-            print "^"*20
-            self.printExpressionForBitmap(b)
-
-        if len(min_covers) != 0:
-            print
-            print "="*20
-            self.printFd(fd)
-            print "min covers = ", len(min_covers)
-                
-            for fl in min_covers:
-                self.printFdList(fl)
-                print "."*20
-
-                for f in fl:
-                    self.printExpressionForBitmap(f.getBitmap())
         return
 
     def generateCoversForAllFDs( self ):
@@ -191,9 +175,9 @@ class FDAnalysis:
     # "cover" the entire set.
     def generateMinimumCovers( self ):
 
-        print "Processing FD definitions in ", self.filename
+        print "Processing FD definitions"
         print
-        print "Functional Dependencies"
+        print "FD definitions in file", self.filename
 
         self.printFds()
         print
@@ -247,138 +231,4 @@ class FDAnalysis:
         
         return
 
-    def buildPatternDict(self, fd_list):
-
-        pattern_dict = defaultdict(list)
-
-        for k in range(1,self.numAttrs()):
-            for p in k_in_n(k, self.numAttrs()):
-                pattern_dict[k].append(p)
-
-        return pattern_dict
-
-    def buildHitsDict(self):
-
-        fd_list = self.fdList()
-
-        pattern_dict = self.buildPatternDict(fd_list)
-
-        points = set()
-        hits_dict = defaultdict(list)
-        for k in range(1,self.numAttrs()):
-            for pat in pattern_dict[k]:
-                temp_list = []
-                for p in self.points():
-                    # if point p fits pattern pat
-                    if pat & p == pat:
-                        temp_list.append(p)
-                #hits_dict[k] has k-bit patterns of 1's
-                if len(temp_list) >= 2**(self.numAttrs()-(k+1)):
-                    hits_dict[k].append((pat,temp_list))
-                    points.update(temp_list)
-        return hits_dict
-    
-    def buildRefinedRACList(self):
-
-        refined = []
-        hits_dict = self.buildHitsDict()
-
-        inv_pattern_list = []
-        for k in range(self.numAttrs()):
-            inv_pattern_list.append(2**k)
-        #inv_pattern_list is a list of 
-        #single bit patterns
-
-        mask = 0
-        # mask of numAttrs bits, all 1's 
-        for k in range(self.numAttrs()):
-            mask |= 1<<k
-
-        points = set()
-        for ky in hits_dict.keys():
-            for pair in hits_dict[ky]:
-                l = pair[1]
-                pos_pat = pair[0]
-                for neg_pat in inv_pattern_list:
-                    tmp_list = []
-                    for p in l:
-                        # since neg_pat is negative, & it with
-                        # the inverse of p (i.e. neg_pat is actually
-                        # positive, but want the negative effect
-                        if neg_pat & (p ^ mask) == neg_pat:
-                            tmp_list.append(p)
-                    if len(tmp_list) == 2**(self.numAttrs()-(ky+1)):
-                        tmp_list_bm = create_bitmap_from_points_list(tmp_list, self.numAttrs())
-                        if bitmap_covered_by_bitmap(tmp_list_bm,
-                                                    self.unionBitmap()):
-                            points.update(tmp_list)
-                            rac = FDCandidate( \
-                                    tmp_list,pos_pat,neg_pat, self.attrs())
-                            refined.append(rac)
-        points_bm = create_bitmap_from_points_list(list(points),self.numAttrs())
-        return refined
-
-    def buildRefinedBySizeList(self):
-
-        refined = self.buildRefinedRACList()
-        
-        refined_bm = rac_list_union_bitmap(refined)
-
-        refined_by_size = defaultdict(list)
-        #sort refined by size of points lists
-        for cand in refined:
-            refined_by_size[len(cand.points())].append(cand)
-
-        refined_keys = refined_by_size.keys()
-        refined_keys.sort(reverse=True)
-
-        rbs = [[] for i in range(len(refined_by_size.keys()))]
-        for key in refined_keys:
-            idx = refined_keys.index(key)
-            rbs[idx].extend(refined_by_size[key])
-
-        return rbs
-
-
-    #######################################################################
-    def reduceRefinedBySize(self, rbs):
-#                if c.id in [6, 22, 2]:
-#                    print "1:found", c.id
-
-        while [] in rbs:
-            rbs.remove([])
-
-        fdcList_list = FDCandidateListList( self.unionBitmap(), self.numAttrs() )
-        prev_list = None
-        for i in range(len(rbs)):
-            fdcList = FDCandidateList(rbs[i], self.attrs(), \
-                        self.unionBitmap(), prev_list)
-            fdcList_list.addFdcList(fdcList)
-
-            prev_list = fdcList
-
-        fdcList_list.validate()
-        fdcList_list.removeOvershadowedFdcs()
-
-        fdcList_list.distill()
-
-        reduced = fdcList_list.combineAndReduce()
-        for f in reduced:
-            print f.id,
-        print
-
-        return fdcList_list.createFdList()
-            
-    
-    #######################################################################
-    def getFdPlusList(self, fd_list=None):
-
-        if fd_list == None:
-            fd_list = self.fdList()
-
-        # I believe the rbs corresponds to the F+ list
-        rbs = self.buildRefinedBySizeList()
-
-        solution_fds = self.reduceRefinedBySize(rbs)
-        return solution_fds
 
