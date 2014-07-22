@@ -19,9 +19,11 @@ class FDAnalysis:
         self.newAttrs_ = []
         self.impliedAttr = None
         self.points_ = []
+        self.pointsSet_ = set()
         self.given = []
         self.fdData = []
         self.implied = []
+        
         self.unionBitmap_ = None
         #strip off path
         self.filename = filename.split("\\")[-1]
@@ -97,6 +99,7 @@ class FDAnalysis:
             self.unionBitmap_ |= fd.getBitmap()
         for i in range(len(self.unionBitmap_)):
             self.points_.append(i)
+            self.pointsSet_.add(i)
 
     def setBitmaps(self):
             
