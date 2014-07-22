@@ -1,0 +1,10 @@
+flight -> destination
+flight -> hour
+day, flight -> gate
+day, flight -> pilot
+day, hour, pilot -> gate
+day, hour, pilot -> flight
+day, hour, pilot -> destination
+day, hour, gate -> pilot
+day, hour, gate -> flight
+day, hour, gate -> destination
