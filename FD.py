@@ -11,7 +11,7 @@ from gen_util import *
 class FunctionalDependency:
 
     Attr_dict = {}
-    Id_count = 0
+    Id_count = 1
 
     def __init__(self, given, implied, attributes=None):
         
